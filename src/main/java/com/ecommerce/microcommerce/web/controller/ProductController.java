@@ -1,25 +1,46 @@
 package com.ecommerce.microcommerce.web.controller;
 
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import com.ecommerce.microcommerce.model.Product;
+import com.ecommerce.microcommerce.web.dao.ProductDao;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 public class ProductController {
 
+    private final ProductDao productDao;
+
+    public ProductController(ProductDao productDao) {
+        this.productDao = productDao;
+    }
+
     @GetMapping("/Produits")
-    public String listeProduits()
-    {
-        return "Un exemple de produit";
+    public List<Product> listeProduits(){
+        return productDao.findAll();
     }
 
-    @GetMapping("/Produits/{id}")
-    public String afficherUnProduit(@PathVariable int id)
-    {
-        return "Vous avez demandé in produit avec l'id " + id;
+    @GetMapping(value = "/Produits/{id}")
+    public Product afficherUnProduit(@PathVariable int id){
+        return productDao.findById(id);
     }
 
-
+    @PostMapping(value = "/Produits")
+    public ResponseEntity<Product> ajouterProduit(@RequestBody Product product) {
+        Product productAdded = productDao.save(product);
+        if (Objects.isNull(productAdded)) {
+            return ResponseEntity.noContent().build();
+        }
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(productAdded.getId())
+                .toUri();
+        return ResponseEntity.created(location).build();
+    }
 }
